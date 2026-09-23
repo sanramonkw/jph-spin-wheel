@@ -93,7 +93,14 @@
     });
     html += '</table>';
     html += '<button id="admPull">Pull tomorrow’s allocation forward</button>';
+    html += '<button id="admCarry">Carry yesterday’s leftovers into today</button>';
     html += '<button id="admUndo">Undo last spin</button>';
+    var stranded = NS.Inventory.strandedBefore();
+    if (stranded > 0) {
+      html += '<div class="sub warn">' + stranded + ' coupon(s) are sitting in days ' +
+              'that have already passed. Each day draws only from its own bucket, so ' +
+              'those cannot be won any more unless they are carried into today.</div>';
+    }
 
     /* --- planned allocation ------------------------------------- */
     html += '<h3>PLANNED ALLOCATION</h3>';
@@ -401,6 +408,16 @@
       var moved = NS.Inventory.pullForward();
       if (moved === false) say("Nothing to pull forward from here.", "warn");
       else say("Moved " + moved + " coupons forward into today.", "ok");
+      rerender();
+    };
+
+    el = document.getElementById("admCarry");
+    if (el) el.onclick = function () {
+      var moved = NS.Inventory.carryForward();
+      if (moved === false) say("There is no earlier day to carry from.", "warn");
+      else if (moved === 0) say("Nothing left over from earlier days.", "warn");
+      else say("Carried " + moved + " coupon(s) from earlier days into today. " +
+               "Undo by editing the numbers above.", "ok");
       rerender();
     };
 

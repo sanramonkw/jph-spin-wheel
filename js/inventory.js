@@ -388,6 +388,52 @@
     if (Inv.changed) Inv.changed();
   };
 
+  /* Bring yesterday's unclaimed stock into today.
+
+     The mirror of pullForward, and it exists because without it leftover
+     stock is not merely held back, it is STRANDED: each day's bucket is
+     chosen by date, so once the date moves on, yesterday's remainder can
+     never be reached again. Over three days that means giving away fewer
+     coupons than intended.
+
+     Staff-controlled and explicit, like pullForward, rather than
+     automatic — BUILD-SPEC section 8 keeps stock movement in staff hands,
+     and a silent carry would make day 3 unpredictable.
+
+     Yesterday's bucket is zeroed as it moves, so pressing twice cannot
+     double-count, and the table shows plainly that it has been taken. */
+  Inv.carryForward = function () {
+    var d = Inv.dayIndex();
+    if (d === null || d < 1 || d > 2) return false;   // day 1 has no yesterday
+    var inv = inventory(), id, r, moved = 0;
+    for (id in inv.remaining) {
+      if (!Object.prototype.hasOwnProperty.call(inv.remaining, id)) continue;
+      r = inv.remaining[id];
+      if (!r || !r[d - 1] || r[d - 1] <= 0) continue;
+      moved += r[d - 1];
+      r[d] += r[d - 1];
+      r[d - 1] = 0;
+    }
+    NS.Store.write(K_INV, inv);
+    if (Inv.changed) Inv.changed();
+    return moved;
+  };
+
+  /* How much is sitting unreachable in days already past. Surfaced in the
+     staff panel so nobody has to notice it by reading the table. */
+  Inv.strandedBefore = function () {
+    var d = Inv.dayIndex();
+    if (d === null || d < 1) return 0;
+    var inv = inventory(), id, r, i, n = 0;
+    for (id in inv.remaining) {
+      if (!Object.prototype.hasOwnProperty.call(inv.remaining, id)) continue;
+      r = inv.remaining[id];
+      if (!r) continue;
+      for (i = 0; i < d && i < 3; i++) n += (r[i] || 0);
+    }
+    return n;
+  };
+
   // pull tomorrow's allocation forward into today
   Inv.pullForward = function () {
     var d = Inv.dayIndex();
