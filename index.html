@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#303045">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="format-detection" content="telephone=no,date=no,address=no,email=no">
+<title>JPH — Spin the Wheel, Steal the Deal</title>
+
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body data-state="boot">
+
+<div id="fit">
+  <div id="stage">
+
+    <img id="bg" src="assets/bg.webp" alt="">
+    <div id="bgwash"></div>
+
+    <h1 class="headline" data-copy="headline">SPIN THE WHEEL, STEAL THE DEAL!</h1>
+
+    <!-- Wheel. #wheelWrap sits on the artboard's centre (539, 1047) and is
+         0x0; the 866x866 wheel hangs off it at -433,-433. #wheel rotates.
+         #hub and #flapPivot are siblings and do not. -->
+    <div id="wheelWrap">
+      <div id="wheel">
+        <div id="ringHost"></div>
+        <!-- Animated disc. The video sits on top of the still and is clipped
+             to a circle in CSS; the green background in the source lies
+             outside that circle and is never visible. Plain H.264
+             Constrained Baseline rather than an alpha codec, because VP9
+             is often not hardware-accelerated on cheap signage panels and
+             would cost frame rate while the wheel is turning.
+             DO NOT REMOVE clip-path — without it this is a green square. -->
+        <img id="discImg" src="assets/disc.webp" alt="">
+        <video id="discVid" muted loop playsinline webkit-playsinline autoplay
+               preload="auto" disablepictureinpicture
+               src="assets/disc-anim.mp4"></video>
+      </div>
+
+      <!-- Gold flapper. Awaiting artwork from the designer (BUILD-SPEC
+           section 18 item 9). Static until stage 3 gives it physics.
+
+           The prototype's needle reached r=367, which sits inside the
+           label ring and covered part of whichever label was at the top.
+           Shortened to 66px so the tip lands at r=412, clear of the
+           tallest label glyph (~r=410) and overlapping the rim. The
+           dividers run 284..433 so the tip still crosses every one of
+           them, and in any case the peg strike is computed from the
+           angle, not from collision. -->
+      <div id="flapPivot"><div id="flapRot">
+        <svg id="flap" viewBox="0 0 72 96" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="gflap" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#ffdd9a"/>
+              <stop offset=".45" stop-color="#EDA53A"/>
+              <stop offset="1" stop-color="#b9720f"/>
+            </linearGradient>
+          </defs>
+          <circle cx="36" cy="22" r="21" fill="url(#gflap)" stroke="#FDFBF4" stroke-width="5"/>
+          <path d="M17 32 L36 88 L55 32 Z" fill="url(#gflap)" stroke="#FDFBF4"
+                stroke-width="5" stroke-linejoin="round"/>
+          <circle cx="36" cy="22" r="7" fill="#7d1230"/>
+        </svg>
+      </div></div>
+
+      <div id="hub"><span>JPH</span></div>
+    </div>
+
+    <!-- Stage 5 fills this with one row per prize tier. -->
+    <div id="stockPanel" data-copy="stockHeader">LEFT TODAY</div>
+
+
+    <!-- The whole lower area is the trigger (BUILD-SPEC section 5): on a tall
+         panel on a stand the top of the screen is above many people's reach,
+         so there is one big target rather than a button to aim at. The SPIN
+         button sits inside it as the visual affordance. -->
+    <div id="tapZone">
+      <button id="spinBtn" type="button" data-copy="spinButton">SPIN</button>
+      <div id="tapToPlay" data-copy="attract">TAP TO PLAY</div>
+    </div>
+
+    <!-- Result popup (BUILD-SPEC section 9.3 and 9.4). Full-screen over the
+         wheel, which dims to 35% behind it. The coupon code and QR appear
+         only in "code" fulfilment mode; with physical coupons a short
+         reference from the winners log stands in their place. -->
+    <div id="resultPopup" data-kind="win">
+      <div id="rpConfetti" aria-hidden="true"></div>
+      <div class="rp-inner">
+
+        <!-- 1. character reaction. CharacterView owns everything inside.
+             The two clips are chroma-keyed VP9 with a real alpha channel;
+             the disc still is the fallback if the WebView cannot play them. -->
+        <div id="charView" data-pose="idle" data-mode="video">
+          <video id="charWin"  class="char-vid" src="assets/react-win.webm"
+                 muted playsinline webkit-playsinline preload="auto" hidden></video>
+          <video id="charLose" class="char-vid" src="assets/react-lose.webm"
+                 muted playsinline webkit-playsinline preload="auto" hidden></video>
+          <img id="charImg" src="assets/disc.webp" alt="">
+        </div>
+
+        <!-- 2. YOU WON! / NICE TRY! -->
+        <div id="rpTitle" class="rp-title"></div>
+
+        <!-- 3. prize name, or the one warm line on a loss -->
+        <div id="rpPrize" class="rp-prize"></div>
+
+        <!-- 4. coupon code, code mode only -->
+        <div id="rpCodeWrap" class="rp-card" hidden><span id="rpCode"></span></div>
+
+        <!-- 4b. reference number, physical mode -->
+        <div id="rpRefWrap" class="rp-card rp-ref" hidden>
+          <div id="rpRefLabel" class="rp-ref-label"></div>
+          <div id="rpRef"></div>
+        </div>
+
+        <!-- 5. QR, generated on the device. Never a CDN: it will not load. -->
+        <div id="rpQrWrap" hidden><div id="rpQr"></div></div>
+
+        <!-- 6. terms -->
+        <div id="rpTerms" class="rp-terms"></div>
+
+        <!-- 7a. WIN: staff clear this, not the attendee. A stray tap does
+             nothing; the button has to be held. Holding is also what marks
+             the coupon as handed over in the winners log. -->
+        <div id="rpClaim" class="rp-claim" hidden></div>
+        <button id="rpHold" class="rp-hold" type="button" hidden>
+          <i id="rpHoldFill" class="rp-hold-fill"></i>
+          <span id="rpHoldLabel"></span>
+        </button>
+
+        <!-- 7b. HARD LUCK: nothing to collect, so any tap clears it. -->
+        <div id="rpDismiss" class="rp-dismiss"></div>
+      </div>
+    </div>
+
+    <!-- Shown when today's stock is gone and staff have set the toggle to
+         stop (BUILD-SPEC section 9.7). Tapping does nothing, deliberately:
+         a disabled button invites repeated pressing. -->
+    <div id="endOfDay" class="screen">
+      <div class="screen-inner">
+        <div class="screen-title" id="endOfDayTitle" data-copy="endOfDayTitle">TODAY'S COUPONS ARE ALL CLAIMED</div>
+        <div class="screen-line" id="endOfDayLine"></div>
+      </div>
+    </div>
+
+    <!-- Shown until staff have entered quantities, odds and dates. Nothing
+         is invented to stand in for them, so there is nothing to play. -->
+    <div id="setup" class="screen">
+      <div class="screen-inner">
+        <div class="screen-title" data-copy="setupTitle">SETUP REQUIRED</div>
+        <div class="screen-line" data-copy="setupLine"></div>
+      </div>
+    </div>
+
+    <!-- Hidden staff gesture: 3-second press. Invisible by design. -->
+    <div id="adminCorner"></div>
+
+  </div>
+</div>
+
+<!-- Staff diagnostics. Not part of the attendee-facing app. -->
+<div id="diag"><div id="diagBody"></div></div>
+
+<script src="version.js"></script>
+<script src="js/config.js"></script>
+<script src="js/util.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/stage.js"></script>
+<script src="js/wheel.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/spin.js"></script>
+<script src="js/inventory.js"></script>
+<script src="js/stockpanel.js"></script>
+<script src="js/admin.js"></script>
+<script src="js/qr.js"></script>
+<script src="js/character.js"></script>
+<script src="js/result.js"></script>
+<script src="js/attract.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/backup.js"></script>
+<script src="js/tests.js"></script>
+<script src="js/sw-register.js"></script>
+<script src="js/diagnostics.js"></script>
+<script src="js/boot.js"></script>
+</body>
+</html>

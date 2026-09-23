@@ -1,0 +1,729 @@
+/* ------------------------------------------------------------------
+   app.css — design system (BUILD-SPEC section 4) and stage layout.
+
+   Values here are sampled from the designer's artboard. Nothing in
+   this build may introduce a colour or size that is not below.
+
+   Deliberately avoided for the unknown Android WebView (section 2):
+   CSS nesting, :has(), container queries, dialog.
+------------------------------------------------------------------ */
+
+/* ---- fonts ---------------------------------------------------- */
+@font-face {
+  font-family: 'Destruction Manual';
+  src: url('../assets/destruction.woff2') format('woff2');
+  font-weight: 400; font-style: normal; font-display: block;
+}
+@font-face {
+  font-family: 'WinSoft Pro';
+  src: url('../assets/winsoft.woff2') format('woff2');
+  font-weight: 700; font-style: normal; font-display: block;
+}
+
+/* ---- tokens --------------------------------------------------- */
+:root {
+  --red:       #E10C48;
+  --red-deep:  #8C1C3E;
+  --red-dark:  #7D0A2B;
+  --cream:     #FDFBF4;
+  --ink:       #212243;
+  --night:     #303045;
+  --night-2:   #332A36;
+  --plum:      #43192E;
+  /* Proposed, not from the original artboard — confirm with the designer. */
+  --gold:      #EDA53A;
+
+  --display: 58px;
+  --title:   44px;
+  --body:    30px;
+  --label:   24px;
+  --caption: 19px;
+  --code:    64px;
+
+  --radius-card: 24px;
+  --tap-min: 120px;
+
+  --font-display: 'Destruction Manual', 'Arial Black', Impact, sans-serif;
+  --font-ui: 'WinSoft Pro', 'Arial Black', Impact, system-ui, sans-serif;
+  --font-code: ui-monospace, 'Roboto Mono', 'Courier New', monospace;
+
+  --stage-w: 1080px;
+  --stage-h: 1920px;
+  --scale: 1;
+}
+
+/* ---- kiosk hardening, first pass (section 14; full pass stage 10) */
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body {
+  margin: 0; padding: 0; height: 100%; width: 100%;
+  background: #1a1420;
+  overflow: hidden;
+  overscroll-behavior: none;
+  overscroll-behavior-x: none;    /* the swipe-back gesture */
+  touch-action: manipulation;
+  -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-text-size-adjust: 100%; text-size-adjust: 100%;
+  font-family: var(--font-ui);
+  color: var(--cream);
+}
+
+/* ---- stage ---------------------------------------------------- */
+/* Nothing in the attendee-facing app may be selected or dragged.
+   The staff panel opts back in below. */
+#fit, #fit * {
+  -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none;
+  user-select: none; -webkit-user-drag: none;
+}
+#fit img { pointer-events: none; }
+#diag, #diag * {
+  -webkit-user-select: text; -moz-user-select: text; user-select: text;
+}
+#fit {
+  position: fixed; inset: 0; overflow: hidden;
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
+           env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+}
+#stage {
+  position: absolute; left: 50%; top: 50%;
+  width: var(--stage-w); height: var(--stage-h);
+  transform: translate(-50%, -50%) scale(1);
+  transform-origin: center center;
+  overflow: hidden;
+  background: #1a1420;
+}
+
+/* background image, then the section 4 gradient wash over it */
+#bg {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; object-position: center;
+}
+#bgwash {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg,
+    rgba(48, 48, 69, 0.65)  0%,     /* --night   */
+    rgba(51, 42, 54, 0.65) 34%,     /* --night-2 */
+    rgba(67, 25, 46, 0.65) 66%,     /* --plum    */
+    rgba(140, 28, 62, 0.65) 100%);  /* --red-deep */
+}
+
+/* ---- headline -------------------------------------------------
+   The artboard put this at y=372, which left a third of the screen
+   empty above it and squeezed everything below. Client decision
+   2026-09-23: the stock panel moves up under the headline, both move
+   up into that space, and the wheel takes the room that frees. */
+.headline {
+  position: absolute; left: 0; right: 0; top: 150px;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: var(--display);
+  letter-spacing: .5px;
+  color: var(--cream);
+  text-shadow: 0 4px 18px rgba(0, 0, 0, .65);
+  padding: 0 60px;
+}
+
+/* ---- wheel (artboard: centre 539,1047, element 866x866) -------
+   #wheelWrap sits ON the wheel centre and is 0x0, so everything
+   inside positions from the centre outwards and the whole assembly
+   scales as one. #wheel rotates; #hub and #flapPivot are siblings
+   and deliberately do not. */
+#wheelWrap {
+  position: absolute; left: 50%; top: 1000px;
+  width: 0; height: 0;
+  transform: scale(var(--wheel-scale, 1));
+}
+#wheel {
+  position: absolute; left: -433px; top: -433px;
+  width: 866px; height: 866px;
+  transform: rotate(0deg);
+  will-change: transform;
+  backface-visibility: hidden;
+}
+#ringHost { position: absolute; inset: 0; width: 866px; height: 866px; }
+#ringHost svg { width: 866px; height: 866px; display: block; }
+
+/* character disc covers radius 0..284, so 568px across, offset 433-284.
+   The still and the animation are registered identically, so they sit at
+   exactly the same place and size and are interchangeable. */
+#discImg, #discVid {
+  position: absolute; left: 149px; top: 149px;
+  width: 568px; height: 568px;
+  pointer-events: none;
+}
+#discVid {
+  clip-path: circle(50%);
+  -webkit-clip-path: circle(50%);   /* older Android WebViews need the prefix */
+  object-fit: cover;
+  display: block;
+  background: transparent;
+}
+/* hidden or failed, the still underneath shows through */
+#discVid.off { display: none; }
+
+/* static hub, radius 62. Covers the JPH logo baked into the disc. */
+#hub {
+  position: absolute; left: -62px; top: -62px;
+  width: 124px; height: 124px; border-radius: 50%;
+  background: radial-gradient(circle at 38% 32%, #f22c63, #c80d49 62%, #9d0837);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, .5), inset 0 -4px 10px rgba(0, 0, 0, .35);
+  border: 4px solid var(--cream);
+  z-index: 3;
+}
+#hub span {
+  font-family: var(--font-ui); font-weight: 700;
+  color: var(--cream); font-size: 31px;
+  letter-spacing: 5px; text-indent: 5px;
+}
+
+/* ---- flapper / pointer ----------------------------------------
+   Not in the supplied design; built for the prototype and awaiting
+   a visual treatment from the designer (BUILD-SPEC section 6, and
+   section 18 item 9). Static here — stage 3 gives it the peg-strike
+   physics.
+
+   Pivot sits 45px above the rim, i.e. 478px above the wheel centre;
+   the 66px needle then reaches r=412, inside the rim and clear of the
+   labels. Rotation is applied to a 0x0 DIV rather than to the SVG
+   element, because CSS transform-origin on SVG is unreliable on older
+   Android WebViews (section 2). */
+#flapPivot { position: absolute; left: 0; top: -478px; width: 0; height: 0; z-index: 4; }
+#flapRot   { position: absolute; left: 0; top: 0; width: 0; height: 0; transform: rotate(0deg); }
+#flap {
+  position: absolute; left: -36px; top: -22px;
+  width: 72px; height: 96px;
+  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, .6));
+}
+
+/* ---- lower third ---------------------------------------------
+   All touch targets live here: on a tall panel on a stand, the top
+   of the screen is above many people's reach (section 5). */
+/* ---- stock panel (section 9.5) --------------------------------
+   The urgency engine. Visible scarcity is what makes people call
+   their friends over, so it is present in every non-overlay state
+   and updates the instant a spin resolves.
+
+   PORTRAIT IS TIGHT. The artboard puts the wheel's lower edge at
+   y=1480 and the SPIN button at y=1600, leaving exactly 120px for a
+   header and five tiers. So portrait uses one strip of compact chips
+   rather than rows: tier name at 24px (the section 4 floor for
+   information rather than decoration) over a 36px count. Landscape
+   has a whole column and uses full rows.
+
+   This is the open layout question flagged in docs/DECISIONS.md. It
+   fits, but it has no slack, and a sixth tier would not fit at all. */
+#stockPanel {
+  /* Directly under the headline rather than under the wheel. It had 120px
+     below the wheel and no slack at all; here it has room, it fills the
+     dead space the artboard left at the top, and the wheel gets the whole
+     middle of the screen. It is not a touch target, so section 5's
+     lower-third rule does not apply to it. */
+  position: absolute; left: 60px; right: 60px; top: 274px;
+  height: 140px; z-index: 7; pointer-events: none;
+  display: flex; flex-direction: column; justify-content: center;
+}
+.sp-head {
+  font-size: var(--label); letter-spacing: 3px;
+  color: rgba(253, 251, 244, .7);
+  text-align: center; margin-bottom: 10px;
+  text-shadow: 0 2px 8px rgba(24, 16, 28, .9);
+}
+.sp-grid { display: flex; gap: 8px; }
+.sp-chip {
+  flex: 1 1 0; min-width: 0;
+  border-radius: 16px;
+  background: rgba(33, 34, 67, .55);
+  border: 2px solid rgba(253, 251, 244, .16);
+  padding: 10px 4px 12px;
+  text-align: center;
+}
+.sp-name {
+  font-size: var(--label); font-weight: 700; line-height: 1.1;
+  color: var(--cream);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sp-count {
+  font-size: 34px; font-weight: 700; line-height: 1.05;
+  color: var(--gold);
+}
+/* depleted: 40% and struck through, reading GONE (section 9.5) */
+.sp-chip.gone { opacity: .4; }
+.sp-chip.gone .sp-name { text-decoration: line-through; }
+.sp-chip.gone .sp-count {
+  color: var(--cream); font-size: var(--label); letter-spacing: 2px;
+}
+#stockPanel.sp-unset { justify-content: center; }
+.sp-note {
+  text-align: center; font-size: var(--label);
+  color: rgba(253, 251, 244, .5); letter-spacing: 2px;
+}
+
+/* ---- full-screen states (sections 9.7 and setup) --------------- */
+.screen {
+  position: absolute; inset: 0; z-index: 20;
+  display: none;
+  background: rgba(24, 16, 28, .82);
+  align-items: center; justify-content: center;
+  padding: 0 80px;
+}
+body[data-state="endOfDay"] #endOfDay { display: flex; }
+body[data-state="setup"] #setup { display: flex; }
+.screen-inner { text-align: center; }
+.screen-title {
+  font-family: var(--font-display); font-size: var(--display);
+  color: var(--cream); line-height: 1.15;
+  text-shadow: 0 4px 18px rgba(0, 0, 0, .65);
+}
+.screen-line {
+  margin-top: 28px; font-size: var(--body);
+  color: rgba(253, 251, 244, .8); line-height: 1.4;
+}
+/* the wheel dims behind an end-of-day screen and stops inviting taps */
+body[data-state="endOfDay"] #wheelWrap,
+body[data-state="setup"] #wheelWrap { opacity: .35; }
+body[data-state="endOfDay"] #spinBtn,
+body[data-state="setup"] #spinBtn { display: none; }
+
+/* The trigger covers everything from the wheel's lower edge down, so a
+   tap anywhere in the lower third spins. It sits UNDER the stock panel
+   and the popup in z-order so neither is blocked. */
+#tapZone {
+  /* Starts just below the wheel so it cannot swallow the hub gesture,
+     and runs to the bottom edge. */
+  position: absolute; left: 0; right: 0; bottom: 0;
+  top: 1500px;
+  z-index: 6;
+  cursor: pointer;
+}
+body[data-state="spinning"] #tapZone,
+body[data-state="result"] #tapZone,
+body[data-state="endOfDay"] #tapZone,
+body[data-state="setup"] #tapZone { pointer-events: none; }
+
+/* TAP TO PLAY, pulsing, gold, display face, in the lower third (9.1).
+   It lives in the strip below the SPIN button, which is the only free
+   band the artboard leaves. */
+#tapToPlay {
+  position: absolute; left: 0; right: 0; bottom: 60px;
+  text-align: center;
+  font-family: var(--font-display); font-size: var(--body);
+  color: var(--gold); letter-spacing: 3px;
+  animation: tapPulse 1.8s ease-in-out infinite;
+}
+@keyframes tapPulse { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
+/* hidden the moment a spin starts (9.2) */
+body[data-state="spinning"] #tapToPlay,
+body[data-state="result"] #tapToPlay,
+body[data-state="endOfDay"] #tapToPlay,
+body[data-state="setup"] #tapToPlay { display: none; }
+
+#spinBtn {
+  position: absolute; left: 50%; bottom: 170px;
+  transform: translateX(-50%);
+  width: 700px; height: 150px;      /* exceeds the 120px minimum target */
+  border: 0; border-radius: 75px;
+  font-family: var(--font-display);
+  font-size: 62px;
+  color: #3b0715;
+  background: linear-gradient(180deg, #ffd07a, var(--gold) 55%, #d1801c);
+  box-shadow: 0 10px 0 #8d4f0c, 0 18px 34px rgba(0, 0, 0, .55);
+  transition: transform .08s, box-shadow .08s;
+  cursor: pointer;
+}
+#spinBtn:active {
+  transform: translateX(-50%) translateY(7px);
+  box-shadow: 0 3px 0 #8d4f0c, 0 10px 20px rgba(0, 0, 0, .5);
+}
+#spinBtn[disabled] { filter: grayscale(.55) brightness(.8); cursor: default; }
+
+/* ---- hidden admin / diagnostics gesture target (section 12) ----
+   Bottom-left corner, 3-second long press. Invisible, and small
+   enough that it cannot be hit while reaching for SPIN. */
+#adminCorner {
+  position: absolute; left: 0; bottom: 0;
+  width: 150px; height: 150px;
+  z-index: 40;
+  background: transparent;
+}
+
+/* ---- diagnostics overlay --------------------------------------
+   Staff-facing, never seen by an attendee. Deliberately plain: it
+   is an instrument, not a screen. */
+#diag {
+  position: fixed; inset: 0; z-index: 100;
+  display: none;
+  background: rgba(12, 9, 16, .96);
+  color: #e8dcf0;
+  font: 15px/1.6 ui-monospace, 'Roboto Mono', monospace;
+  padding: 28px;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+#diag.open { display: block; }
+#diag h2 { margin: 0 0 4px; font: 700 20px/1.3 var(--font-ui); color: #fff; letter-spacing: 1px; }
+#diag h3 { margin: 22px 0 8px; font: 700 14px/1.3 var(--font-ui); color: #a892bb; letter-spacing: 2px; }
+#diag .sub { color: #8f7ca1; margin-bottom: 8px; }
+#diag table { width: 100%; border-collapse: collapse; }
+#diag td { padding: 6px 8px; border-bottom: 1px solid #2a2036; vertical-align: top; }
+#diag td:first-child { color: #8f7ca1; width: 44%; }
+#diag .ok   { color: #3ABDA3; }
+#diag .warn { color: #ffd884; }
+#diag .bad  { color: #ff9bb4; }
+#diag ul { margin: 6px 0 0; padding-left: 22px; }
+#diag li { margin: 3px 0; color: #ffd884; }
+#diag button {
+  background: #2a1f36; color: #e8dcf0; border: 1px solid #47365a;
+  border-radius: 10px; padding: 14px 18px;
+  font: 700 15px var(--font-ui); cursor: pointer;
+  margin: 0 8px 8px 0; min-height: 56px;
+}
+#diag .close {
+  position: sticky; top: 0; float: right;
+  background: #3a2340; border-color: #6a4a72;
+}
+#diag .note { margin-top: 18px; color: #8f7ca1; font-size: 13px; }
+
+/* ---- landscape ------------------------------------------------
+   Design space 1920x1080. Client decision 2026-09-22; undesigned,
+   built to the section 4 system and awaiting a designer pass.
+   BUILD-SPEC section 5: wheel left, stock panel right, SPIN below
+   the wheel.
+
+   The wheel column anchors to the left edge and the panel column to
+   the right, so on a wider-than-16:9 panel the extra width opens up
+   in the middle rather than dragging either column off screen. */
+body[data-orient="landscape"] .headline {
+  left: auto; right: 60px; top: 80px;
+  width: 840px;
+  padding: 0;
+}
+body[data-orient="landscape"] #wheelWrap {
+  left: 500px; top: 40%;
+}
+body[data-orient="landscape"] #stockPanel {
+  left: auto; right: 60px; width: 840px;
+  top: 280px; bottom: 230px; height: auto;
+  justify-content: flex-start;
+}
+body[data-orient="landscape"] .sp-head {
+  font-size: var(--label); margin-bottom: 18px;
+}
+/* landscape has a whole column, so full rows rather than chips */
+body[data-orient="landscape"] .sp-grid {
+  flex-direction: column; gap: 14px;
+}
+body[data-orient="landscape"] .sp-chip {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 28px; border-radius: var(--radius-card);
+  text-align: left;
+}
+body[data-orient="landscape"] .sp-name { font-size: var(--body); }
+body[data-orient="landscape"] .sp-count { font-size: 40px; }
+body[data-orient="landscape"] .sp-chip.gone .sp-count { font-size: var(--body); }
+body[data-orient="landscape"] #spinBtn {
+  left: 500px; right: auto; bottom: 90px;
+  width: 600px;
+}
+body[data-orient="landscape"] #tapZone { top: 55%; right: 1000px; }
+body[data-orient="landscape"] #tapToPlay { left: 0; right: auto; width: 1000px; bottom: 30px; }
+
+/* ---- landscape ------------------------------------------------
+   Design space 1920x1080. Client decision 2026-09-22; undesigned,
+   built to the section 4 system and awaiting a designer pass.
+   BUILD-SPEC section 5: wheel left, stock panel right, SPIN below
+   the wheel.
+
+   The wheel column anchors to the left edge and the panel column to
+   the right, so on a wider-than-16:9 panel the extra width opens up
+   in the middle rather than dragging either column off screen. */
+body[data-orient="landscape"] .headline {
+  left: auto; right: 60px; top: 80px;
+  width: 840px;
+  padding: 0;
+}
+body[data-orient="landscape"] #wheelWrap {
+  left: 500px; top: 40%;
+}
+body[data-orient="landscape"] #stockPanel {
+  left: auto; right: 60px; width: 840px;
+  top: 280px; bottom: 230px; height: auto;
+  justify-content: flex-start;
+}
+body[data-orient="landscape"] .sp-head {
+  font-size: var(--label); margin-bottom: 18px;
+}
+/* landscape has a whole column, so full rows rather than chips */
+body[data-orient="landscape"] .sp-grid {
+  flex-direction: column; gap: 14px;
+}
+body[data-orient="landscape"] .sp-chip {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 28px; border-radius: var(--radius-card);
+  text-align: left;
+}
+body[data-orient="landscape"] .sp-name { font-size: var(--body); }
+body[data-orient="landscape"] .sp-count { font-size: 40px; }
+body[data-orient="landscape"] .sp-chip.gone .sp-count { font-size: var(--body); }
+body[data-orient="landscape"] #spinBtn {
+  left: 500px; right: auto; bottom: 90px;
+  width: 600px;
+}
+body[data-orient="landscape"] #tapZone { top: 55%; right: 1000px; }
+body[data-orient="landscape"] #tapToPlay { left: 0; right: auto; width: 1000px; bottom: 30px; }
+
+/* ---- temporary stage-3 result readout -------------------------
+   Replaced by the full-screen popup in stage 6; delete this block and
+   the #result element together.
+
+   It sits ON the stock panel rather than below it. There is no room
+   below: the wheel ends 440px off the bottom and the SPIN button starts
+   at 320px, and the stock panel already fills the 90px between. That
+   crowding is the open portrait layout question for stage 5 — see
+   docs/DECISIONS.md. The stock panel is an empty placeholder until
+   then, so covering it costs nothing. */
+#result {
+  position: absolute; left: 60px; right: 60px; bottom: 320px;
+  height: 120px; z-index: 5;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-card);
+  background: var(--ink);
+  font-family: var(--font-ui); font-weight: 700;
+  font-size: var(--body); color: var(--cream);
+  opacity: 0; transition: opacity .25s;
+  pointer-events: none;
+}
+#result.show { opacity: 1; }
+#result .win  { color: var(--gold); }
+#result .lose { color: var(--cream); opacity: .8; }
+#result .bad  { color: #ff9bb4; }
+
+
+/* the flapper needs its own layer too, or a weak GPU repaints the
+   whole wheel every frame */
+#flapRot { will-change: transform; }
+#diag .muted { color: #8f7ca1; }
+
+/* ---- staff panel form controls --------------------------------
+   Deliberately plain and finger-sized. This is an instrument, not a
+   screen, and it is operated standing up in a noisy hall. */
+#diag input[type="number"],
+#diag input[type="text"],
+#diag input[type="date"] {
+  background: #221a2c; color: #e8dcf0;
+  border: 1px solid #47365a; border-radius: 8px;
+  padding: 10px 12px; font: 15px ui-monospace, monospace;
+  width: 100%; max-width: 220px; min-height: 44px;
+}
+#diag input[type="checkbox"], #diag input[type="radio"] {
+  width: 26px; height: 26px; vertical-align: middle; margin-right: 8px;
+}
+#diag label { display: block; margin: 6px 0; cursor: pointer; }
+#diag table.grid td { padding: 5px 6px; }
+#diag table.grid td:first-child { width: auto; color: #cbb6d6; }
+#diag table.grid tr:first-child td { color: #8f7ca1; font-size: 13px; }
+#diag td.today { background: rgba(237, 165, 58, .12); }
+
+/* ================================================================
+   RESULT POPUP (BUILD-SPEC section 9.3 and 9.4)
+   Full-screen over the wheel, which dims to 35% behind it.
+   ================================================================ */
+#resultPopup {
+  position: absolute; inset: 0; z-index: 30;
+  display: none;
+  background: rgba(24, 16, 28, .88);
+  overflow: hidden;
+}
+#resultPopup.show { display: block; }
+body[data-state="result"] #wheelWrap { opacity: .35; }
+body[data-state="result"] #spinBtn,
+body[data-state="result"] #stockPanel { opacity: .35; }
+
+.rp-inner {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 16px; padding: 40px 70px;
+  text-align: center;
+}
+
+/* --- 1. character reaction ------------------------------------
+   Two modes, chosen by CharacterView:
+
+   video  the supplied clips, chroma-keyed to a real alpha channel, shown
+          full figure at their native 380x680 so nothing is resampled
+   still  the fallback if the WebView cannot play VP9 alpha: a circular
+          window onto the character disc, which is what shipped before */
+#charView {
+  position: relative; flex: none;
+  width: 380px; height: 680px;
+}
+.char-vid {
+  position: absolute; left: 0; top: 0;
+  width: 100%; height: 100%;
+  object-fit: contain;
+  /* the figures are cut out, so a soft ground shadow stops them floating */
+  filter: drop-shadow(0 18px 26px rgba(0, 0, 0, .55));
+}
+#charView[data-mode="video"] #charImg { display: none; }
+
+#charView[data-mode="still"] {
+  width: 300px; height: 300px;
+  border-radius: 50%; overflow: hidden;
+  border: 6px solid var(--cream);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, .55);
+  background: var(--red-dark);
+}
+#charView[data-mode="still"] .char-vid { display: none; }
+#charImg { position: absolute; max-width: none; }
+
+/* entry: scale from 0.8 with overshoot (section 9.6) */
+#charView.enter { animation: charIn .52s cubic-bezier(.22, 1.4, .36, 1) both; }
+@keyframes charIn {
+  from { transform: scale(.8); opacity: 0; }
+  to   { transform: scale(1);  opacity: 1; }
+}
+/* the bob is only for the still: the clips carry their own motion */
+#charView[data-mode="still"].enter #charImg {
+  animation: charBob 2.4s ease-in-out .52s infinite;
+}
+@keyframes charBob {
+  0%, 100% { margin-top: 0; }
+  50%      { margin-top: -10px; }
+}
+
+/* --- 2, 3. titles --------------------------------------------- */
+.rp-title {
+  font-family: var(--font-display); font-size: var(--display);
+  line-height: 1.1; color: var(--gold);
+  text-shadow: 0 4px 18px rgba(0, 0, 0, .6);
+}
+/* a loss is cream, not gold: nothing to celebrate, nothing to mock */
+#resultPopup[data-kind="lose"] .rp-title { color: var(--cream); }
+
+.rp-prize {
+  font-family: var(--font-ui); font-weight: 700;
+  font-size: var(--title); line-height: 1.2; color: var(--cream);
+  max-width: 900px;
+}
+#resultPopup[data-kind="lose"] .rp-prize {
+  font-size: var(--body); color: rgba(253, 251, 244, .85);
+}
+
+/* --- 4. coupon code / reference, on a cream card --------------- */
+.rp-card {
+  background: var(--cream); color: var(--ink);
+  border-radius: var(--radius-card);
+  padding: 18px 40px;
+  font-family: var(--font-code); font-weight: 700;
+  font-size: var(--code); letter-spacing: 8px;
+  line-height: 1.15;
+}
+.rp-ref { padding: 14px 40px; }
+.rp-ref-label {
+  font-family: var(--font-ui); font-size: var(--caption);
+  letter-spacing: 3px; color: var(--red-deep);
+  margin-bottom: 4px;
+}
+
+/* --- 5. QR ------------------------------------------------------ */
+#rpQrWrap {
+  background: var(--cream); border-radius: 18px; padding: 12px;
+  line-height: 0;
+}
+#rpQr svg { display: block; }
+
+/* --- 6, 7. terms and dismiss ----------------------------------- */
+.rp-terms {
+  font-size: var(--caption); color: rgba(253, 251, 244, .75);
+  max-width: 820px; line-height: 1.45;
+}
+.rp-dismiss {
+  margin-top: 6px;
+  font-family: var(--font-display); font-size: var(--body);
+  color: var(--gold); letter-spacing: 2px;
+  animation: rpPulse 1.6s ease-in-out infinite;
+}
+@keyframes rpPulse { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+
+/* --- confetti ---------------------------------------------------
+   Transform-only, so a weak GPU repaints nothing (section 19). */
+#rpConfetti { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+#rpConfetti i {
+  position: absolute; top: -40px; display: block; border-radius: 3px;
+  opacity: 0;
+}
+#rpConfetti.go i {
+  animation-name: confettiFall;
+  animation-timing-function: cubic-bezier(.35, .1, .6, 1);
+  animation-fill-mode: forwards;
+}
+@keyframes confettiFall {
+  0%   { opacity: 1; transform: translate3d(0, 0, 0) rotate(0deg); }
+  100% { opacity: 0; transform: translate3d(var(--drift), 115vh, 0) rotate(var(--spin)); }
+}
+
+/* --- landscape --------------------------------------------------
+   A two-column split left dead space on one side and bunched the
+   content on the other. A single centred column always composes, so
+   landscape keeps the portrait hierarchy and just tightens: a smaller
+   character and smaller gaps, which still leaves the whole stack
+   inside 1080 even with the QR shown.
+
+   Undesigned, like the rest of landscape. Expect a designer pass. */
+body[data-orient="landscape"] .rp-inner {
+  gap: 12px; padding: 36px 80px;
+}
+body[data-orient="landscape"] #charView { width: 290px; height: 520px; }
+body[data-orient="landscape"] #charView[data-mode="still"] {
+  width: 180px; height: 180px; border-width: 5px;
+}
+body[data-orient="landscape"] .rp-title { font-size: var(--title); }
+body[data-orient="landscape"] .rp-prize { font-size: var(--body); }
+body[data-orient="landscape"] .rp-card { padding: 12px 34px; font-size: 48px; letter-spacing: 6px; }
+body[data-orient="landscape"] .rp-dismiss { margin-top: 2px; font-size: var(--label); }
+
+/* staff panel: export and import text areas */
+#diag textarea {
+  width: 100%; background: #221a2c; color: #e8dcf0;
+  border: 1px solid #47365a; border-radius: 8px;
+  padding: 10px 12px; font: 12px/1.45 ui-monospace, monospace;
+  margin: 8px 0; resize: vertical;
+}
+#diag input[type="file"] { color: #cbb6d6; font: 14px system-ui; margin: 6px 0; }
+#diag input[type="password"] { letter-spacing: 3px; }
+
+/* --- win handover (client decision 2026-09-23) ------------------
+   The person who must not miss this screen is the staff member, not
+   the attendee, so a win is cleared by a deliberate hold rather than a
+   tap. A yes/no dialog would not work here: people tap through dialogs
+   reflexively, and two taps is not more attention than one. */
+.rp-claim {
+  font-size: var(--body); line-height: 1.35;
+  color: var(--cream); max-width: 860px;
+}
+.rp-hold {
+  position: relative; overflow: hidden;
+  min-height: var(--tap-min);          /* section 4 minimum target */
+  padding: 0 54px;
+  border: 3px solid var(--gold);
+  border-radius: 70px;
+  background: var(--red-deep);
+  color: var(--cream);
+  font-family: var(--font-display);
+  font-size: var(--body); letter-spacing: 2px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.rp-hold-fill {
+  position: absolute; left: 0; top: 0; bottom: 0; width: 0;
+  background: var(--gold); opacity: .38;
+  /* duration is set from JS so one constant drives both */
+  transition: width 1s linear;
+}
+.rp-hold.holding .rp-hold-fill { width: 100%; }
+/* released early: snap back rather than easing, so it reads as cancelled */
+.rp-hold .rp-hold-fill { transition-timing-function: linear; }
+.rp-hold:not(.holding) .rp-hold-fill { transition-duration: .18s; }
+.rp-hold span { position: relative; }
+.rp-hold:active { border-color: var(--cream); }

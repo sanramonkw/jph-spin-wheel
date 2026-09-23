@@ -1,0 +1,19 @@
+{
+  "name": "JPH — Spin the Wheel, Steal the Deal",
+  "short_name": "JPH Wheel",
+  "description": "Kiosk prize wheel. Runs entirely offline on a single panel.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "portrait-primary",
+  "background_color": "#303045",
+  "theme_color": "#303045",
+  "categories": ["entertainment"],
+  "prefer_related_applications": false,
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
