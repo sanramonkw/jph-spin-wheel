@@ -111,6 +111,49 @@
                 SW.updateReady ? "warn" : "");
     html += '</table>';
 
+    /* --- installing (BUILD-SPEC section 3) ---------------------- */
+    var ins = NS.Install.state;
+    var installed = NS.Install.isInstalled();
+    html += '<h3>INSTALLING TO THE HOME SCREEN</h3><table>';
+    html += row("Installed", installed ? "yes, running as an installed app"
+                                       : "NO &mdash; running in a browser tab",
+                verdict(installed));
+    html += row("Browser offered an install prompt",
+                NS.Install.available() ? "yes"
+                  : (ins.supported ? "it did, and it has been used"
+                                   : "not offered"),
+                verdict(NS.Install.available() || installed, true));
+    if (ins.manifest) {
+      html += row("Manifest", ins.manifest.type + " &mdash; display " +
+                  ins.manifest.display + ", icons " + ins.manifest.icons.join(", "),
+                  "");
+    } else if (ins.manifestError) {
+      html += row("Manifest", ins.manifestError, "bad");
+    }
+    html += '</table>';
+    if (!installed) {
+      var why = NS.Install.reasons();
+      if (NS.Install.available()) {
+        html += '<button id="insGo">Install to the home screen</button>';
+        html += '<div class="sub">This is the same thing as the browser’s own ' +
+                '"Install app" or "Add to Home Screen". Afterwards, launch it from ' +
+                'the home screen icon rather than the browser.</div>';
+      } else if (why.length) {
+        html += '<div class="sub bad">The browser is not offering to install this. ' +
+                'As far as the page can tell:</div><ul>';
+        why.forEach(function (w) { html += '<li>' + w + '</li>'; });
+        html += '</ul>';
+      } else {
+        html += '<div class="sub warn">The browser has not offered an install prompt, ' +
+                'and nothing obvious is wrong. It may already be installed, or this ' +
+                'browser may simply not support it &mdash; on a signage panel, Fully ' +
+                'Kiosk Browser is the better route anyway (BUILD-SPEC section 14).</div>';
+      }
+      html += '<div class="sub">Installing is what gets persistent storage granted. ' +
+              'Until then Android may evict the coupon stock.</div>';
+    }
+    html += '<div id="insMsg" class="note"></div>';
+
     /* --- storage ------------------------------------------------ */
     html += '<h3>STORAGE</h3><table>';
     html += row("localStorage", Store.available ? "available" : "UNAVAILABLE",
@@ -335,6 +378,15 @@
   function wire() {
     NS.Admin.wire(render);
     document.getElementById("diagClose").onclick = close;
+
+    var ins = document.getElementById("insGo");
+    if (ins) ins.onclick = function () {
+      NS.Install.prompt(function (r) {
+        var n = document.getElementById("insMsg");
+        if (n) { n.textContent = r.message; n.className = "note " + (r.ok ? "ok" : "bad"); }
+        setTimeout(render, 1200);
+      });
+    };
 
     var out = document.getElementById("authOut");
     if (out) out.onclick = function () { NS.Auth.logout(); render(); };

@@ -41,6 +41,7 @@ var PRECACHE = [
   "./js/auth.js",
   "./js/backup.js",
   "./js/tests.js",
+  "./js/install.js",
   "./js/sw-register.js",
   "./js/diagnostics.js",
   "./js/boot.js",

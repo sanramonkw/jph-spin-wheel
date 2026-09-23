@@ -263,6 +263,7 @@
     NS.Inventory.changed = onInventoryChange;
     NS.Inventory.init();
     NS.StockPanel.init();
+    NS.Install.init();
     NS.Diagnostics.init();
 
     // The coupon inventory lives in localStorage for three days.
