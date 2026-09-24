@@ -165,7 +165,20 @@
       </div>
     </div>
 
-    <!-- Hidden staff gesture: 3-second press. Invisible by design. -->
+    <!-- Staff pause. Hidden, and shown over everything below it so no
+         stray tap gets through, but the two corner gestures sit above it
+         so staff can always resume or reach the panel. -->
+    <div id="paused" class="screen">
+      <div class="screen-inner">
+        <div class="screen-title" data-copy="pausedTitle">PAUSED</div>
+        <div class="screen-line" data-copy="pausedLine"></div>
+      </div>
+    </div>
+
+    <!-- Hidden staff gestures. Invisible by design.
+         Top-left, 2 seconds  : pause / resume
+         Bottom-left, 3 seconds : the staff panel -->
+    <div id="pauseCorner"></div>
     <div id="adminCorner"></div>
 
   </div>
@@ -199,6 +212,7 @@
 <script src="js/backup.js"></script>
 <script src="js/tests.js"></script>
 <script src="js/install.js"></script>
+<script src="js/lock.js"></script>
 <script src="js/sw-register.js"></script>
 <script src="js/diagnostics.js"></script>
 <script src="js/boot.js"></script>

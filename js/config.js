@@ -47,7 +47,9 @@
     closedBefore:    "Come back on {date}",
     closedAfter:     "Thanks for playing!",
     setupTitle:      "SETUP REQUIRED",
-    setupLine:       "Staff: press and hold the bottom-left corner for 3 seconds."
+    setupLine:       "Staff: press and hold the bottom-left corner for 3 seconds.",
+    pausedTitle:     "PAUSED",
+    pausedLine:      "Back in a moment"
   };
 
   /* ---- wheel geometry, measured (BUILD-SPEC section 6) ----------
@@ -147,7 +149,8 @@
     strandedMs: 180000,
     attractSpinDegPerSec: 6,
     adminIdleTimeoutMs: 5 * 60 * 1000,
-    adminLongPressMs: 3000
+    adminLongPressMs: 3000,
+    pauseLongPressMs: 2000
   };
 
   /* ==============================================================

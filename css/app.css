@@ -288,17 +288,16 @@ body[data-state="setup"] #wheelWrap { opacity: .35; }
 body[data-state="endOfDay"] #spinBtn,
 body[data-state="setup"] #spinBtn { display: none; }
 
-/* The trigger covers everything from the wheel's lower edge down, so a
-   tap anywhere in the lower third spins. It sits UNDER the stock panel
-   and the popup in z-order so neither is blocked. */
+/* Holds the SPIN button and TAP TO PLAY. It is NOT a trigger itself
+   (client decision 2026-09-24) — only the button spins — so it lets taps
+   straight through and nothing outside the button can start a spin. */
 #tapZone {
-  /* Starts just below the wheel so it cannot swallow the hub gesture,
-     and runs to the bottom edge. */
   position: absolute; left: 0; right: 0; bottom: 0;
   top: 1500px;
   z-index: 6;
-  cursor: pointer;
+  pointer-events: none;
 }
+#tapZone #spinBtn { pointer-events: auto; }
 body[data-state="spinning"] #tapZone,
 body[data-state="result"] #tapZone,
 body[data-state="endOfDay"] #tapZone,
@@ -846,3 +845,27 @@ body[data-orient="landscape"] #resultPopup[data-kind="soldout"] .rp-ticket {
 body[data-orient="landscape"] #resultPopup[data-kind="soldout"] .rp-ticket::after {
   font-size: 20px; letter-spacing: 4px; bottom: 12px;
 }
+
+/* ---- staff pause -----------------------------------------------
+   Above everything the attendee can touch, below the staff panel, and
+   below the two corner gestures so staff are never locked out. */
+#paused {
+  z-index: 45;
+  background: rgba(20, 13, 24, .94);
+}
+body[data-paused="1"] #paused { display: flex; }
+body[data-paused="1"] #wheelWrap { opacity: .18; }
+body[data-paused="1"] #spinBtn,
+body[data-paused="1"] #tapToPlay,
+body[data-paused="1"] #stockPanel { display: none; }
+#paused .screen-title { color: var(--gold); }
+
+/* Both gestures sit above the pause overlay. Invisible, and in corners
+   an attendee reaching for the wheel does not touch — the top of a tall
+   panel on a stand is above most people's reach (section 5). */
+#pauseCorner {
+  position: absolute; left: 0; top: 0;
+  width: 150px; height: 150px;
+  z-index: 60; background: transparent;
+}
+#adminCorner { z-index: 60; }

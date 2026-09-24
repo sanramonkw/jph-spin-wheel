@@ -126,14 +126,15 @@
     document.body.setAttribute("data-state", next);
     state = next;
     // the wheel idles only in attract (section 9.1)
+    var paused = NS.Lock && NS.Lock.isLocked();
     if (NS.Attract) {
-      if (next === "attract") NS.Attract.start(); else NS.Attract.stop();
+      if (next === "attract" && !paused) NS.Attract.start(); else NS.Attract.stop();
     }
     /* Music plays in attract and nowhere else. It fades rather than cuts
        into a spin: a hard stop reads as a fault. Client decision
        2026-09-24; section 9.1 originally specified no sound in attract. */
     if (NS.Audio && NS.Audio.musicStart) {
-      if (next === "attract") NS.Audio.musicStart();
+      if (next === "attract" && !paused) NS.Audio.musicStart();
       else NS.Audio.musicStop(next === "spinning");
     }
     if (NS.onState) NS.onState(next);
@@ -161,7 +162,8 @@
      makes the entire lower area a tap target and it must obey the same
      lock. Mashing must not queue spins (BUILD-SPEC section 9.2). */
   function doSpin() {
-    if (NS.Spin.isSpinning()) return;              // the lock
+    if (NS.Lock.isLocked()) return;                // staff have paused it
+    if (NS.Spin.isSpinning()) return;              // the spin lock
     if (NS.getState() !== "attract") return;
 
     // 1. Draw the outcome from REMAINING STOCK, weighted (§7).
@@ -309,6 +311,7 @@
     NS.Inventory.init();
     NS.StockPanel.init();
     NS.Install.init();
+    NS.Lock.init();
     NS.Diagnostics.init();
 
     // The coupon inventory lives in localStorage for three days.

@@ -7,10 +7,12 @@
      - TAP TO PLAY pulses in the lower third
      - no sound
 
-   The entire lower area is the tap target (§5). On a tall panel on a
-   stand the top of the screen is above many people's reach, so there is
-   one big trigger rather than a button somebody has to aim at. The SPIN
-   button still sits inside it as the visual affordance.
+   §5 asked for the entire lower area to be the tap target. Client
+   decision 2026-09-24: only the SPIN button spins. A whole-screen-half
+   trigger fires on sleeve brushes, on somebody steadying themselves
+   against the panel, and on a child leaning in — each of which burns a
+   coupon on nobody. The button is 700x150 and sits in the lower third,
+   so it is still an easy target; it is just a deliberate one.
 
    The idle rotation drives Spin's stored angle rather than the wheel
    directly, so a spin always starts from where the wheel actually is.
@@ -45,15 +47,10 @@
 
   NS.Attract = {
     init: function () {
-      var zone = document.getElementById("tapZone");
-      if (zone) {
-        // One handler for the whole lower area. It defers to the same
-        // lock the SPIN button uses, so mashing cannot queue spins.
-        zone.addEventListener("click", function (e) {
-          e.preventDefault();
-          NS.doSpin();
-        }, false);
-      }
+      /* No handler on the zone any more: it is a layout wrapper and lets
+         taps through. The SPIN button has its own handler, bound in
+         boot.js, and both go through the same lock so mashing still
+         cannot queue spins. */
 
       // A backgrounded WebView stops firing rAF; resume cleanly.
       document.addEventListener("visibilitychange", function () {
