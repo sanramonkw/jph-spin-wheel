@@ -103,6 +103,8 @@
 
     NS.CharacterView.setPose(win ? "win" : "lose");
     NS.CharacterView.enter();
+    // the sound that came with the clip, restored as its own track
+    NS.Audio.reaction(win ? "win" : "lose");
 
     if (win) {
       var prize = NS.Inventory.config().prizes[res.segment.prize] || {};
@@ -212,6 +214,7 @@
     open = false;
     currentEntry = null;
     el.root.classList.remove("show");
+    NS.Audio.reactionStop();
     NS.CharacterView.setPose("idle");
     if (el.confetti) el.confetti.classList.remove("go");
     var cb = onDone; onDone = null;

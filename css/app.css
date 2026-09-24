@@ -727,3 +727,60 @@ body[data-orient="landscape"] .rp-dismiss { margin-top: 2px; font-size: var(--la
 .rp-hold:not(.holding) .rp-hold-fill { transition-duration: .18s; }
 .rp-hold span { position: relative; }
 .rp-hold:active { border-color: var(--cream); }
+
+/* --- the prize, as a ticket ------------------------------------
+   The prize name read as just another line of text next to the
+   headline. It is the thing being given away, so it gets the shape of
+   the thing being given away: a cream stub with a dashed tear line and
+   a notch punched out of each side.
+
+   Built from the section 4 tokens only — cream card, ink text, gold
+   rule. No new colours. */
+.rp-ticket {
+  position: relative;
+  background: var(--cream);
+  color: var(--ink);
+  border-radius: 18px;
+  padding: 22px 56px;
+  max-width: 880px;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, .45);
+}
+/* the dashed tear line, inset from the edge */
+.rp-ticket::before {
+  content: ""; position: absolute; inset: 9px;
+  border: 2px dashed rgba(225, 12, 72, .45);
+  border-radius: 11px;
+  pointer-events: none;
+}
+/* a notch punched from each side, in the popup's own colour */
+.rp-ticket-edge {
+  position: absolute; top: 50%;
+  width: 30px; height: 30px; margin-top: -15px;
+  border-radius: 50%;
+  background: #241826;
+}
+.rp-ticket-edge.left  { left: -15px; }
+.rp-ticket-edge.right { right: -15px; }
+
+.rp-ticket .rp-prize {
+  position: relative;
+  font-family: var(--font-display);
+  font-size: 52px; line-height: 1.12;
+  color: var(--ink);
+  letter-spacing: .5px;
+}
+
+/* A hard luck has no ticket: there is nothing to give. The card drops
+   away and the warm line is plain text on the overlay. */
+#resultPopup[data-kind="lose"] .rp-ticket {
+  background: none; box-shadow: none; padding: 0; max-width: 900px;
+}
+#resultPopup[data-kind="lose"] .rp-ticket::before,
+#resultPopup[data-kind="lose"] .rp-ticket-edge { display: none; }
+#resultPopup[data-kind="lose"] .rp-prize {
+  font-family: var(--font-ui); font-weight: 700;
+  font-size: var(--body); color: rgba(253, 251, 244, .85);
+}
+
+body[data-orient="landscape"] .rp-ticket { padding: 14px 44px; }
+body[data-orient="landscape"] .rp-ticket .rp-prize { font-size: 38px; }

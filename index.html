@@ -108,8 +108,14 @@
         <!-- 2. YOU WON! / NICE TRY! -->
         <div id="rpTitle" class="rp-title"></div>
 
-        <!-- 3. prize name, or the one warm line on a loss -->
-        <div id="rpPrize" class="rp-prize"></div>
+        <!-- 3. prize name, or the one warm line on a loss.
+             On a win it sits in a torn-ticket card so it reads as the thing
+             being given, not as another line of text. -->
+        <div id="rpPrizeCard" class="rp-ticket">
+          <span class="rp-ticket-edge left" aria-hidden="true"></span>
+          <div id="rpPrize" class="rp-prize"></div>
+          <span class="rp-ticket-edge right" aria-hidden="true"></span>
+        </div>
 
         <!-- 4. coupon code, code mode only -->
         <div id="rpCodeWrap" class="rp-card" hidden><span id="rpCode"></span></div>
@@ -164,6 +170,12 @@
 
   </div>
 </div>
+
+<!-- Audio. The character clips are muted as video so autoplay stays
+     reliable; their sound is here instead, alongside the attract music. -->
+<audio id="bgMusic"     src="assets/music-attract.m4a" loop preload="auto"></audio>
+<audio id="sndWinClip"  src="assets/react-win.m4a"  preload="auto"></audio>
+<audio id="sndLoseClip" src="assets/react-lose.m4a" preload="auto"></audio>
 
 <!-- Staff diagnostics. Not part of the attendee-facing app. -->
 <div id="diag"><div id="diagBody"></div></div>

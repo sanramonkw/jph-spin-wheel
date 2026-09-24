@@ -129,6 +129,13 @@
     if (NS.Attract) {
       if (next === "attract") NS.Attract.start(); else NS.Attract.stop();
     }
+    /* Music plays in attract and nowhere else. It fades rather than cuts
+       into a spin: a hard stop reads as a fault. Client decision
+       2026-09-24; section 9.1 originally specified no sound in attract. */
+    if (NS.Audio && NS.Audio.musicStart) {
+      if (next === "attract") NS.Audio.musicStart();
+      else NS.Audio.musicStop(next === "spinning");
+    }
     if (NS.onState) NS.onState(next);
   };
   NS.getState = function () { return state; };
@@ -177,6 +184,8 @@
                              ", stopped on " + NS.SEGMENTS[res.landedIndex].id;
       }
       NS.setState("result");
+      // now the wheel has stopped, the count may catch up
+      if (visualsPending) applyStockVisuals();
       NS.Result.show(res, entry, function () {
         document.getElementById("spinBtn").disabled = false;
         settleState();
@@ -194,11 +203,20 @@
       if (NS.getState() !== "result") return;
       if (NS.Spin.isSpinning()) return;
       if (!NS.Result.isOpen()) { settleState(); return; }
-      if (NS.Result.openedFor() > NS.TIMING.strandedMs) {
-        NS.Store.lastError = "result was left on screen for " +
-          Math.round(NS.TIMING.strandedMs / 1000) + "s and the watchdog closed it";
-        NS.Result.hide();
-      }
+      if (NS.Result.openedFor() <= NS.TIMING.strandedMs) return;
+
+      /* A WIN IS NEVER CLOSED FROM HERE. It waits for staff to hold the
+         confirm button, and closing it on a timer is precisely the failure
+         the hold exists to prevent — the coupon would go unhanded and
+         unrecorded. A win left up is not a fault, it is the screen doing
+         its job, and the staff panel counts it as outstanding.
+
+         A hard luck has nothing to collect, so if one is somehow still up
+         after this long the watchdog does clear it. */
+      if (NS.Result.needsHandover()) return;
+      NS.Store.lastError = "a hard-luck result sat for " +
+        Math.round(NS.TIMING.strandedMs / 1000) + "s and the watchdog cleared it";
+      NS.Result.hide();
     }, 2000);
   }
 
@@ -222,11 +240,20 @@
   }
   NS.settleState = settleState;
 
-  /* Everything that has to repaint when stock or config moves. */
+  /* Everything that has to repaint when stock or config moves.
+
+     The stock panel and the SOLD OUT stamps are held back while a spin is
+     running. Stock is still consumed and written at draw time — section 3
+     requires that, and it is what makes a panel killed mid-spin correct on
+     restart — but showing it immediately gave the result away: the count
+     dropped the instant the screen was tapped, before the wheel had moved.
+     The data leads, the display follows. */
+  var visualsPending = false;
+
   function onInventoryChange() {
-    NS.StockPanel.render();
-    NS.Wheel.paint(NS.Inventory.isConfigured() ? NS.Inventory.soldOutIds() : []);
     NS.Audio.enabled = NS.Inventory.settings().sound;
+    if (NS.getState() === "spinning") { visualsPending = true; return; }
+    applyStockVisuals();
     /* The closed screen says two different things depending on WHY it is
        showing: stock gone for today, or the event is not running. */
     var eodT = document.getElementById("endOfDayTitle");
@@ -243,13 +270,19 @@
         eodL.textContent = NS.COPY.closedAfter;
       } else {
         eodT.textContent = NS.COPY.endOfDayTitle;
-        eodL.textContent = NS.fill(NS.COPY.endOfDayLine,
-          { openingTime: cfg.event.openingTime || "opening time" });
+        eodL.textContent = NS.COPY.endOfDayLine;
       }
     }
     if (!NS.Spin.isSpinning()) settleState();
   }
   NS.onInventoryChange = onInventoryChange;
+
+  function applyStockVisuals() {
+    visualsPending = false;
+    NS.StockPanel.render();
+    NS.Wheel.paint(NS.Inventory.isConfigured() ? NS.Inventory.soldOutIds() : []);
+  }
+  NS.applyStockVisuals = applyStockVisuals;
 
   /* ---- boot ----------------------------------------------------- */
   function start() {

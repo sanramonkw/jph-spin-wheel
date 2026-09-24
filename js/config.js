@@ -33,7 +33,7 @@
     soldOut:         "GONE",          // stock panel
     soldOutStamp:    "SOLD OUT",      // stamped on the wheel wedge, section 6
     endOfDayTitle:   "TODAY'S COUPONS ARE ALL CLAIMED",
-    endOfDayLine:    "Come back tomorrow at {openingTime}",
+    endOfDayLine:    "Come back tomorrow",
     loading:         "LOADING",
     stockNotSet:     "Not set up yet",
     closedTitle:     "THE WHEEL IS CLOSED",

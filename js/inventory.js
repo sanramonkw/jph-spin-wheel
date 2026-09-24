@@ -34,7 +34,10 @@
     fulfilment: null,       // null = use the build default in config.js
     autoDismiss: false,     // false = the result stays until touched
     discAnim: true,         // animated character disc
-    discPauseOnSpin: false  // pause it during a spin if frame rate needs it
+    discPauseOnSpin: false, // pause it during a spin if frame rate needs it
+    music: true,            // attract music (client change, 2026-09-24)
+    musicVolume: 0.35,
+    reactionSound: true     // the audio that came with the character clips
   };
 
   function settings() {
@@ -472,6 +475,9 @@
     if (f === "physical" || f === "code") NS.FULFILMENT.mode = f;
     NS.applyDismissSetting(st.autoDismiss);
     NS.Wheel.disc.set(st.discAnim, st.discPauseOnSpin);
+    NS.Audio.musicOn = st.music !== false;
+    NS.Audio.musicVolume = (st.musicVolume != null) ? st.musicVolume : 0.35;
+    NS.Audio.reactionOn = st.reactionSound !== false;
     reconcile();
     watchedDate = Inv.today();
     setInterval(watchDate, 30000);

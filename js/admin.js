@@ -233,6 +233,25 @@
             '<button id="sndWin">Hear the win sound</button>' +
             '<button id="sndLose">Hear the hard-luck sound</button>' +
             '<button id="sndTick">Hear a tick</button></td></tr>';
+    html += '<tr><td>Attract music</td><td>' +
+            '<label><input type="checkbox" id="musOn"' +
+            (set.music ? " checked" : "") + '> play while the wheel is idle</label>' +
+            '<label>Volume <input type="range" id="musVol" min="0" max="100" ' +
+            'value="' + Math.round((set.musicVolume != null ? set.musicVolume : 0.35) * 100) +
+            '" style="width:220px;vertical-align:middle"> ' +
+            '<span id="musVolVal">' +
+            Math.round((set.musicVolume != null ? set.musicVolume : 0.35) * 100) +
+            '%</span></label>' +
+            '<button id="musTest">Play / stop it now</button>' +
+            '<div class="sub">Plays only while the wheel is idle. It fades out ' +
+            'when a spin starts so the tick has room, and stays off through the ' +
+            'result. BUILD-SPEC section 9.1 originally specified no sound in ' +
+            'attract; this is the 2026-09-24 change.</div></td></tr>';
+    html += '<tr><td>Character clip sound</td><td>' +
+            '<label><input type="checkbox" id="reactOn"' +
+            (set.reactionSound ? " checked" : "") +
+            '> play the sound that came with the win and hard-luck clips</label>' +
+            '</td></tr>';
     html += '</table>';
     if (set.testMode) {
       html += '<div class="sub bad">TEST MODE IS ON &mdash; spins are not consuming ' +
@@ -347,6 +366,9 @@
     NS.Inventory.saveSettings({
       autoDismiss: checked("disAuto"),
       discAnim: checked("discOn"),
+      music: checked("musOn"),
+      musicVolume: (parseInt(v("musVol"), 10) || 0) / 100,
+      reactionSound: checked("reactOn"),
       discPauseOnSpin: checked("discPause"),
       endOfDayMode: checked("eodStop") ? "stop" : "continue",
       testMode: checked("admTest"),
@@ -357,6 +379,10 @@
     NS.Audio.enabled = checked("admSound");
     NS.applyDismissSetting(checked("disAuto"));
     NS.Wheel.disc.set(checked("discOn"), checked("discPause"));
+    NS.Audio.musicOn = checked("musOn");
+    NS.Audio.musicVolume = (parseInt(v("musVol"), 10) || 0) / 100;
+    NS.Audio.reactionOn = checked("reactOn");
+    if (!NS.Audio.musicOn) NS.Audio.musicStop(false);
 
     if (!NS.Inventory.isConfigured()) {
       say("Saved, but still incomplete: " + NS.Inventory.missing().join("; "), "warn");
@@ -435,6 +461,16 @@
     if (el) el.onclick = function () { NS.Audio.preview("lose"); };
     el = document.getElementById("sndTick");
     if (el) el.onclick = function () { NS.Audio.preview("tick"); };
+    el = document.getElementById("musTest");
+    if (el) el.onclick = function () { NS.Audio.preview("music"); };
+    el = document.getElementById("musVol");
+    if (el) el.addEventListener("input", function () {
+      var out = document.getElementById("musVolVal");
+      if (out) out.textContent = el.value + "%";
+      NS.Audio.musicVolume = (parseInt(el.value, 10) || 0) / 100;
+      var m = document.getElementById("bgMusic");
+      if (m) { try { m.volume = NS.Audio.musicVolume; } catch (e) {} }
+    }, false);
 
     // live Hard Luck remainder as the odds are typed
     prizeIds().forEach(function (id) {
