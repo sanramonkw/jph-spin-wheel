@@ -35,6 +35,7 @@
     autoDismiss: false,     // false = the result stays until touched
     discAnim: true,         // animated character disc
     discPauseOnSpin: false, // pause it during a spin if frame rate needs it
+    soldOutLands: true,     // client change 2026-09-24, see drawWeights below
     music: true,            // attract music (client change, 2026-09-24)
     musicVolume: 0.35,
     reactionSound: true     // the audio that came with the character clips
@@ -244,6 +245,7 @@
   Inv.drawWeights = function () {
     var c = config();
     var lossSpan = 0, reclaimed = 0, i, s, w = [];
+    var landOnSoldOut = settings().soldOutLands !== false;
 
     NS.SEGMENTS.forEach(function (seg) { if (!seg.win) lossSpan += seg.span; });
 
@@ -252,7 +254,22 @@
       if (!s.win) { w.push(0); continue; }          // filled in below
       var p = c.prizes[s.prize];
       var weight = (p && p.weight != null) ? p.weight : 0;
-      if (Inv.remaining(s.prize) <= 0) { reclaimed += weight; weight = 0; }
+      if (Inv.remaining(s.prize) <= 0) {
+        /* Two behaviours, staff-switchable (client decision 2026-09-24).
+
+           soldOutLands ON (default): a sold-out wedge keeps its odds and
+           can still be landed on. The player is told plainly that the
+           prize has run out. This only reads as fair because the wedge
+           carries a visible SOLD OUT stamp BEFORE the spin — the player
+           can see it is gone, so landing there is a near miss rather than
+           a swindle. Nothing is issued and nothing is consumed.
+
+           soldOutLands OFF: the wedge drops to zero odds and its share
+           moves to Hard Luck, so the wheel never stops on something it
+           cannot give. Kept because it is the safer behaviour if the
+           other one plays badly in front of a queue. */
+        if (!landOnSoldOut) { reclaimed += weight; weight = 0; }
+      }
       w.push(weight);
     }
 
@@ -275,13 +292,21 @@
   Inv.consume = function (segIndex) {
     var seg = NS.SEGMENTS[segIndex];
     var set = settings();
+
+    /* Landing on a wedge whose stock is gone is NOT a win: nothing is
+       issued, nothing is consumed, no reference is generated and it never
+       becomes an outstanding handover. It is recorded separately from an
+       ordinary Hard Luck so the log can show what actually happened. */
+    var outOfStock = !!(seg.win && seg.prize && Inv.remaining(seg.prize) <= 0);
+
     var entry = {
       t: new Date().getTime(),
       date: Inv.today(),
       day: Inv.dayIndex(),
       seg: seg.id,
       prize: seg.prize || null,
-      win: !!seg.win,
+      win: !!seg.win && !outOfStock,
+      soldOut: outOfStock,
       test: !!set.testMode
     };
 
@@ -290,7 +315,7 @@
        to tell a fresh win from a screenshot shown twice. It is the count
        of wins so far on this day, so it is verifiable against the log
        and reads out loud easily across a counter. */
-    if (seg.win) {
+    if (entry.win) {
       var log0 = NS.Store.read(K_LOG, []);
       var n = 1;
       for (var q = 0; q < log0.length; q++) {
@@ -305,7 +330,7 @@
       entry.code = (cp && cp.code) ? cp.code : entry.ref;
     }
 
-    if (seg.win && seg.prize && !set.testMode) {
+    if (entry.win && seg.prize && !set.testMode) {
       var inv = inventory();
       var d = Inv.dayIndex();
       var r = inv.remaining[seg.prize];

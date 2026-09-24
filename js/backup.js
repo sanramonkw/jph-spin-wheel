@@ -68,7 +68,7 @@
         e.seg,
         e.prize || "",
         prize.label || "",
-        e.win ? "win" : "hard luck",
+        e.win ? "win" : (e.soldOut ? "landed on a sold-out prize" : "hard luck"),
         e.ref || "",
         e.code || "",
         e.remainingAfter === undefined ? "" : e.remainingAfter,

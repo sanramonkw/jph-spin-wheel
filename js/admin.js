@@ -226,6 +226,18 @@
             '<div class="sub">Currently: ' + NS.Wheel.disc.status() + '. Turn the ' +
             'animation off, or just pause it during a spin, if the frame rate ' +
             'in the SPIN section above drops below 50.</div></td></tr>';
+    html += '<tr><td>A prize that has sold out</td><td>' +
+            '<label><input type="radio" name="so" id="soLand"' +
+            (set.soldOutLands !== false ? " checked" : "") +
+            '> the wheel can still stop on it, and says it has gone</label>' +
+            '<label><input type="radio" name="so" id="soSkip"' +
+            (set.soldOutLands === false ? " checked" : "") +
+            '> the wheel never stops on it; its odds move to Hard Luck</label>' +
+            '<div class="sub">The wedge carries a SOLD OUT stamp either way, ' +
+            'which is what makes the first option read as a near miss rather ' +
+            'than a swindle &mdash; the player can see it was gone before they ' +
+            'spun. Switch to the second if it plays badly in front of a queue.' +
+            '</div></td></tr>';
     html += '<tr><td>Test mode</td><td><label><input type="checkbox" id="admTest"' +
             (set.testMode ? " checked" : "") + '> spin without consuming stock</label></td></tr>';
     html += '<tr><td>Sound</td><td><label><input type="checkbox" id="admSound"' +
@@ -366,6 +378,7 @@
     NS.Inventory.saveSettings({
       autoDismiss: checked("disAuto"),
       discAnim: checked("discOn"),
+      soldOutLands: !checked("soSkip"),
       music: checked("musOn"),
       musicVolume: (parseInt(v("musVol"), 10) || 0) / 100,
       reactionSound: checked("reactOn"),

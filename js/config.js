@@ -29,6 +29,13 @@
     termsOnePer:     "One per customer",
     loseTitle:       "NICE TRY!",
     loseLine:        "The wheel wasn't feeling it. Come back and try again!",
+    /* Landing on a prize that has already run out. Names the prize rather
+       than hiding it: the wedge carries a visible SOLD OUT stamp before
+       the spin, so pretending it was an ordinary miss would be the part
+       that felt dishonest. Draft copy like everything else in COPY. */
+    soldOutTitle:    "ALL GONE!",
+    soldOutLine:     "Sold out earlier today \u2014 you just missed it.",
+    soldOutStamp2:   "SOLD OUT",
     stockHeader:     "LEFT TODAY",
     soldOut:         "GONE",          // stock panel
     soldOutStamp:    "SOLD OUT",      // stamped on the wheel wedge, section 6

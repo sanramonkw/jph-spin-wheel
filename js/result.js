@@ -92,14 +92,18 @@
     openedAt = (window.performance && performance.now) ? performance.now() : Date.now();
     clearTimer();
 
-    var win = !!res.segment.win;
+    /* Three outcomes now, not two: a win, an ordinary hard luck, and
+       landing on a prize that has already sold out. The third has nothing
+       to hand over, so like a hard luck it clears on a tap. */
+    var soldOut = !!(entry && entry.soldOut);
+    var win = !!res.segment.win && !soldOut;
     isWin = win;
     currentEntry = entry || null;
     var C = NS.COPY;
     var mode = NS.FULFILMENT.mode;
     cancelHold();
 
-    el.root.setAttribute("data-kind", win ? "win" : "lose");
+    el.root.setAttribute("data-kind", win ? "win" : (soldOut ? "soldout" : "lose"));
 
     NS.CharacterView.setPose(win ? "win" : "lose");
     NS.CharacterView.enter();
@@ -137,6 +141,25 @@
 
       playConfetti();
       arm(NS.TIMING.winDismissMs);          // 0 — a win never times out
+    } else if (soldOut) {
+      /* Name the prize. The wedge was stamped SOLD OUT before the spin, so
+         the honest thing is to say which one it was; glossing it as an
+         ordinary miss is what would feel like a swindle. */
+      var sp = NS.Inventory.config().prizes[res.segment.prize] || {};
+      el.title.textContent = C.soldOutTitle;
+      // the prize itself, on a ticket that is visibly struck out
+      el.prize.textContent = sp.label || res.segment.short;
+      // and the reason, in the line the win uses for its instruction
+      el.claim.textContent = C.soldOutLine;
+      el.claim.hidden = false;
+      el.codeWrap.hidden = true;
+      el.qrWrap.hidden = true;
+      el.refWrap.hidden = true;
+      el.terms.hidden = true;
+      el.hold.hidden = true;
+      el.dismiss.hidden = false;
+      el.dismiss.textContent = C.winDismiss;
+      arm(NS.TIMING.loseDismissMs);
     } else {
       el.title.textContent = C.loseTitle;
       el.prize.textContent = C.loseLine;
