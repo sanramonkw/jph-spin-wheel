@@ -32,7 +32,8 @@
     testMode: false,        // spin without consuming stock (§12)
     sound: true,
     fulfilment: null,       // null = use the build default in config.js
-    autoDismiss: false,     // false = the result stays until touched
+    autoDismiss: false,     // false = the hard-luck screen waits for a tap
+    autoDismissSeconds: 7,  // BUILD-SPEC section 9.4's figure, now settable
     discAnim: true,         // animated character disc
     discPauseOnSpin: false, // pause it during a spin if frame rate needs it
     soldOutLands: true,     // client change 2026-09-24, see drawWeights below
@@ -498,7 +499,7 @@
     var st = settings();
     var f = st.fulfilment;
     if (f === "physical" || f === "code") NS.FULFILMENT.mode = f;
-    NS.applyDismissSetting(st.autoDismiss);
+    NS.applyDismissSetting(st.autoDismiss, st.autoDismissSeconds);
     NS.Wheel.disc.set(st.discAnim, st.discPauseOnSpin);
     NS.Audio.musicOn = st.music !== false;
     NS.Audio.musicVolume = (st.musicVolume != null) ? st.musicVolume : 0.35;

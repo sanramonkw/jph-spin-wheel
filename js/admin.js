@@ -212,7 +212,10 @@
             '> stays until somebody touches it</label>' +
             '<label><input type="radio" name="dis" id="disAuto"' +
             (NS.TIMING.loseDismissMs > 0 ? " checked" : "") +
-            '> clears itself after 7 seconds</label>' +
+            '> clears itself after ' +
+            num("disSec", set.autoDismissSeconds == null ? 7 : set.autoDismissSeconds,
+                2, 60) +
+            ' seconds</label>' +
             '<div class="sub">A WIN is not affected either way. It never times ' +
             'out and a stray tap will not clear it &mdash; staff hold the ' +
             'confirm button, and that is what marks the coupon handed over.' +
@@ -377,6 +380,7 @@
 
     NS.Inventory.saveSettings({
       autoDismiss: checked("disAuto"),
+      autoDismissSeconds: Math.max(2, Math.min(60, n("disSec") || 7)),
       discAnim: checked("discOn"),
       soldOutLands: !checked("soSkip"),
       music: checked("musOn"),
@@ -390,7 +394,8 @@
     });
     NS.FULFILMENT.mode = checked("fulCode") ? "code" : "physical";
     NS.Audio.enabled = checked("admSound");
-    NS.applyDismissSetting(checked("disAuto"));
+    NS.applyDismissSetting(checked("disAuto"),
+      Math.max(2, Math.min(60, n("disSec") || 7)));
     NS.Wheel.disc.set(checked("discOn"), checked("discPause"));
     NS.Audio.musicOn = checked("musOn");
     NS.Audio.musicVolume = (parseInt(v("musVol"), 10) || 0) / 100;

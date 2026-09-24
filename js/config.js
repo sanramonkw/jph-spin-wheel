@@ -37,7 +37,7 @@
     soldOutLine:     "Sold out earlier today \u2014 you just missed it.",
     soldOutStamp2:   "SOLD OUT",
     stockHeader:     "LEFT TODAY",
-    soldOut:         "GONE",          // stock panel
+    soldOut:         "SOLD OUT",      // stock panel
     soldOutStamp:    "SOLD OUT",      // stamped on the wheel wedge, section 6
     endOfDayTitle:   "TODAY'S COUPONS ARE ALL CLAIMED",
     endOfDayLine:    "Come back tomorrow",

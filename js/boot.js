@@ -142,14 +142,17 @@
 
   /* Auto-dismiss is a staff setting, not a constant. The 12s/7s from
      BUILD-SPEC sections 9.3 and 9.4 become the preset. */
-  NS.applyDismissSetting = function (on) {
-    /* A win NEVER auto-dismisses: it is cleared by staff holding the
-       confirm button, which is what records the coupon as handed over.
-       Timing it out would be exactly the failure the hold exists to
-       prevent. The preset only affects a hard luck, where there is
-       nothing to collect and nothing to confirm. */
+  /* A WIN NEVER AUTO-DISMISSES: it is cleared by staff holding the confirm
+     button, which is what records the coupon as handed over. Timing it out
+     would be exactly the failure the hold exists to prevent.
+
+     A hard luck has nothing to collect, so staff choose: it waits for a
+     tap, or it clears itself after a number of seconds they set. Section
+     9.4's figure was 7, which is the default here. */
+  NS.applyDismissSetting = function (on, seconds) {
     NS.TIMING.winDismissMs = 0;
-    NS.TIMING.loseDismissMs = on ? 7000 : 0;
+    var sec = (seconds == null) ? 7 : Math.max(2, Math.min(60, seconds));
+    NS.TIMING.loseDismissMs = on ? sec * 1000 : 0;
   };
 
   /* ---- spinning -------------------------------------------------
