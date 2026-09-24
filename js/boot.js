@@ -165,14 +165,23 @@
     var w = NS.weights();
     var idx = NS.pick(w.weights);
 
-    // 2. Consume and persist BEFORE the animation starts (§3), so a
-    //    panel killed mid-spin still has the right stock on restart.
-    //    The entry carries the reference and the issued code.
-    var entry = NS.Inventory.isConfigured() ? NS.Inventory.consume(idx) : null;
+    /* 2. Enter the spinning state FIRST.
 
-    // 3. Only now animate to it.
+       consume() fires the inventory-changed callback, and that callback is
+       what decides whether to repaint the stock panel. If the state still
+       says "attract" at that moment it repaints immediately — which put
+       "50% OFF GONE" and a SOLD OUT stamp on screen 1.2 seconds into a
+       spin that had not landed yet, giving the result away. The deferral
+       has to be armed before the thing it defers happens. */
     NS.setState("spinning");
     document.getElementById("spinBtn").disabled = true;
+
+    /* 3. Consume and persist, still BEFORE the animation starts (§3), so a
+          panel killed mid-spin has the right stock on restart. The entry
+          carries the reference and the issued code. */
+    var entry = NS.Inventory.isConfigured() ? NS.Inventory.consume(idx) : null;
+
+    // 4. Only now animate to it.
 
     NS.Spin.spin(idx, function (res) {
       // A mismatch means the animation stopped on a different segment
