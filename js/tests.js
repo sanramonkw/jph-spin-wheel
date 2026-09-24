@@ -55,9 +55,16 @@
   function testFairness(n) {
     var w = NS.weights();
     var r = NS.Spin.testFairness(n || 10000, w.weights);
+    if (r.verdict === "n/a") {
+      return [t("Fairness: the draw matches the configured odds", true, r.note)];
+    }
     var detail = "chi2 " + r.chi.toFixed(2) + " at " + r.df + " df, " +
                  r.n.toLocaleString() + " draws in " + r.ms + " ms" +
                  "  (5% line " + r.critical + ", 0.1% line " + r.criticalHard + ")";
+    if (r.live < r.rows.length) {
+      detail += "  — " + (r.rows.length - r.live) + " segment(s) are sold out " +
+                "and cannot be drawn, so they are not counted";
+    }
     if (r.verdict === "high") {
       detail += " — above the 5% line, which a fair wheel does about one run " +
                 "in twenty. Run it again; two in a row would be worth a look.";

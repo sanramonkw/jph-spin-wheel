@@ -225,38 +225,61 @@
   /* ---- fairness test (§7, §12) ----------------------------------
      Chi-square of the draw against the configured weights. Kept in the
      app on purpose: it is the evidence if anyone disputes a result. */
+  /* Chi-square critical values, indexed by degrees of freedom. The wheel
+     has 8 segments so df is normally 7, but a segment with zero odds is
+     not a category at all and drops out — which happens the moment a
+     prize tier sells out. */
+  var CHI_05  = [0, 3.84, 5.99, 7.81, 9.49, 11.07, 12.59, 14.07];
+  var CHI_001 = [0, 10.83, 13.82, 16.27, 18.47, 20.52, 22.46, 24.32];
+
   function testFairness(n, weights) {
-    var counts = [], i, total = 0, chi = 0, exp, rows = [];
+    var counts = [], i, total = 0, chi = 0, exp, rows = [], live = 0;
     for (i = 0; i < weights.length; i++) { counts.push(0); total += weights[i]; }
+
+    if (total <= 0) {
+      return { n: 0, chi: 0, df: 0, verdict: "n/a", pass: true, ms: 0, rows: [],
+               note: "every segment has zero odds, so there is nothing to draw" };
+    }
+
     var t0 = (window.performance && performance.now) ? performance.now() : Date.now();
     for (i = 0; i < n; i++) counts[NS.pick(weights)]++;
     var ms = ((window.performance && performance.now) ? performance.now() : Date.now()) - t0;
+
     for (i = 0; i < weights.length; i++) {
       exp = n * weights[i] / total;
-      chi += Math.pow(counts[i] - exp, 2) / exp;
+      /* A zero-weight segment is not a category: it cannot be drawn, its
+         expected count is zero, and including it divides by zero and makes
+         the whole statistic NaN. This is not hypothetical — it is what
+         happens as soon as a tier sells out, which is most of day three. */
+      if (exp > 0) {
+        live++;
+        chi += Math.pow(counts[i] - exp, 2) / exp;
+      }
       rows.push({
         id: SEG[i].id, short: SEG[i].short,
         observed: counts[i] / n, expected: exp / n,
+        live: exp > 0,
         visualShare: SEG[i].span / 360        // shown alongside, so the gap is visible
       });
     }
-    /* Two critical values, 7 degrees of freedom.
 
-       BUILD-SPEC quotes the 5% line, and it is the right thing to SHOW.
+    var df = Math.max(0, live - 1);
+    if (df === 0) {
+      return { n: n, chi: 0, df: 0, verdict: "n/a", pass: true, ms: Math.round(ms),
+               rows: rows, live: live,
+               note: "only one segment can be drawn, so there is nothing to compare" };
+    }
+
+    /* BUILD-SPEC quotes the 5% line, and it is the right thing to SHOW.
        It is the wrong thing to fail on: by construction a perfectly fair
        wheel crosses it about one run in twenty, so a staff-facing red
        FAIL at 5% would cry wolf during the event and get ignored — which
-       is worse than no test. The verdict therefore uses the 0.1% line,
-       which a fair wheel crosses about one run in a thousand, while a
-       genuinely biased draw still fails it loudly.
-
-       The middle band is reported honestly rather than hidden. */
-    var critical = 14.07;        // p = 0.05,  shown for context
-    var criticalHard = 24.32;    // p = 0.001, what the verdict uses
-    var verdict = chi < critical ? "clean"
-                : (chi < criticalHard ? "high" : "fail");
+       is worse than no test. The verdict uses the 0.1% line instead. */
+    var critical = CHI_05[df];
+    var criticalHard = CHI_001[df];
+    var verdict = chi < critical ? "clean" : (chi < criticalHard ? "high" : "fail");
     return { n: n, chi: chi, critical: critical, criticalHard: criticalHard,
-             verdict: verdict, df: weights.length - 1,
+             verdict: verdict, df: df, live: live,
              pass: chi < criticalHard, ms: Math.round(ms), rows: rows };
   }
 
