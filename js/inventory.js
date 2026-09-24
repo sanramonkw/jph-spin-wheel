@@ -177,6 +177,7 @@
 
   function reconcile() {
     var c = config(), inv = inventory(), day = Inv.dayIndex(), id, p, i, cur;
+    var touched = false;
     if (!inv.remaining) inv.remaining = {};
     for (id in c.prizes) {
       if (!Object.prototype.hasOwnProperty.call(c.prizes, id)) continue;
@@ -189,8 +190,12 @@
         else if (day !== null && day >= -1 && i > day) cur[i] = p.dailyStock[i];
       }
       inv.remaining[id] = cur;
+      touched = true;
     }
-    NS.Store.write(K_INV, inv);
+    // Nothing to record means nothing to write. Without this, a full reset
+    // immediately wrote an empty inventory back and "erase everything" left
+    // a key behind.
+    if (touched) NS.Store.write(K_INV, inv);
     return inv;
   }
   Inv.reconcile = reconcile;
@@ -494,16 +499,29 @@
     }
   }
 
-  Inv.init = function () {
-    // the staff toggle wins over the build default (docs/DECISIONS.md)
+  /* Push the stored settings into the running app.
+
+     These live in modules rather than being read on demand, so something
+     has to hand them over. Called at boot and again after a full reset —
+     without the second call, "erase everything" cleared storage but left
+     the app still running on the settings that had just been erased until
+     somebody reloaded. */
+  Inv.applySettings = function () {
     var st = settings();
     var f = st.fulfilment;
-    if (f === "physical" || f === "code") NS.FULFILMENT.mode = f;
+    // null means fall back to the build default rather than keep the old value
+    NS.FULFILMENT.mode = (f === "physical" || f === "code") ? f : "physical";
     NS.applyDismissSetting(st.autoDismiss, st.autoDismissSeconds);
     NS.Wheel.disc.set(st.discAnim, st.discPauseOnSpin);
+    NS.Audio.enabled = st.sound !== false;
     NS.Audio.musicOn = st.music !== false;
     NS.Audio.musicVolume = (st.musicVolume != null) ? st.musicVolume : 0.35;
     NS.Audio.reactionOn = st.reactionSound !== false;
+    return st;
+  };
+
+  Inv.init = function () {
+    Inv.applySettings();
     reconcile();
     watchedDate = Inv.today();
     setInterval(watchDate, 30000);

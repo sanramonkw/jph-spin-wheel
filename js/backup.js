@@ -155,6 +155,7 @@
         return { ok: false, message: "Could not write " + k + ": " + NS.Store.lastError };
       }
     }
+    NS.Inventory.applySettings();
     NS.Inventory.reconcile();
     if (NS.Inventory.changed) NS.Inventory.changed();
     return { ok: true, message: "Imported.", summary: summarise(obj) };
@@ -167,10 +168,17 @@
     return apply(obj);
   }
 
+  /* "Erase everything" has to mean everything: storage AND the settings
+     the running app is holding in memory. Clearing only storage left the
+     panel still using the settings that had just been wiped. */
   function wipe() {
     var keys = NS.Store.keys(), i;
     for (i = 0; i < keys.length; i++) NS.Store.remove(keys[i]);
+    NS.Inventory.applySettings();
     NS.Inventory.reconcile();
+    // reconcile may write nothing, so sweep once more for anything it did
+    keys = NS.Store.keys();
+    for (i = 0; i < keys.length; i++) NS.Store.remove(keys[i]);
     if (NS.Inventory.changed) NS.Inventory.changed();
   }
 
